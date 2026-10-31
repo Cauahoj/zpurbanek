@@ -32,12 +32,29 @@
   }), { threshold: .15, rootMargin: '0px 0px -8% 0px' });
   $$('[data-reveal]').forEach(el => io.observe(el));
 
+  /* ── Neustále běžící animace: pauza mimo obrazovku a během scrollu ──
+     Psací stroj mění text každých ~50 ms a tím nutí prohlížeč přepočítat rozložení stránky.
+     Při scrollu na mobilu to způsobovalo drobné záseky, proto se během pohybu nepíše. */
+  let scrolling = false, scrollT;
+  addEventListener('scroll', () => {
+    scrolling = true;
+    clearTimeout(scrollT);
+    scrollT = setTimeout(() => (scrolling = false), 350);
+  }, { passive: true });
+  const visible = new WeakMap();
+  const visIO = new IntersectionObserver(es => es.forEach(e => {
+    visible.set(e.target, e.isIntersecting);
+    e.target.classList.toggle('is-off', !e.isIntersecting);
+  }));
+  $$('#hero, .marquee').forEach(el => visIO.observe(el));
+
   /* ── Psací stroj ── */
   const typed = $('#typed');
   const phrases = ['výkop pro základy', 'kontejner na suť', 'zbourat stodolu', 'příjezdovou cestu', 'srovnat pozemek', 'navézt štěrk'];
   if (typed && !reduce) {
     let p = 0, i = phrases[0].length, del = true;
     const tick = () => {
+      if (scrolling || visible.get($('#hero')) === false) return setTimeout(tick, 400);
       const word = phrases[p];
       i += del ? -1 : 1;
       typed.textContent = word.slice(0, i);
