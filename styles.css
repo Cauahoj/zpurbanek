@@ -135,9 +135,10 @@ h3 { font-size: 22px; line-height: 1.2; }
 
 /* ── Hero ── */
 .hero { padding-top: clamp(118px, 15vw, 160px); padding-bottom: clamp(56px, 8vw, 96px); position: relative; overflow: hidden; }
-.blob { position: absolute; border-radius: 50%; filter: blur(70px); pointer-events: none; z-index: 0; will-change: transform; }
-.blob--1 { width: 520px; height: 520px; background: rgba(245,193,0,.16); top: -140px; right: -120px; }
-.blob--2 { width: 380px; height: 380px; background: rgba(245,193,0,.08); bottom: -120px; left: -140px; }
+/* skvrny jako radiální gradient místo filter: blur – stejný vzhled, ale bez drahého překreslování */
+.blob { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; will-change: transform; }
+.blob--1 { width: 760px; height: 760px; background: radial-gradient(closest-side, rgba(245,193,0,.16), rgba(245,193,0,.06) 55%, transparent); top: -260px; right: -240px; }
+.blob--2 { width: 560px; height: 560px; background: radial-gradient(closest-side, rgba(245,193,0,.08), transparent); bottom: -210px; left: -230px; }
 .hero__grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1.08fr .92fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
 .hero__badge {
   display: inline-flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line);
@@ -293,7 +294,8 @@ h3 { font-size: 22px; line-height: 1.2; }
 
 /* ── Realizace (horizontální galerie) ── */
 .hscroll { position: relative; }
-.hscroll__track { display: flex; gap: 18px; padding-inline: max(22px, calc((100vw - 1160px) / 2 + 22px)); will-change: transform; }
+.hscroll__track { display: flex; gap: 18px; padding-inline: max(22px, calc((100vw - 1160px) / 2 + 22px)); }
+.is-drift .hscroll__track { will-change: transform; }
 .work {
   flex: 0 0 auto; width: clamp(260px, 26vw, 340px); aspect-ratio: 3 / 4; border-radius: var(--radius); overflow: hidden; position: relative;
   background: var(--surface-2); cursor: zoom-in; text-align: left;
@@ -503,6 +505,16 @@ a.ci:hover { border-color: var(--accent); transform: translateX(4px); }
   .chip__ic { width: 34px; height: 34px; }
   .lb__prev, .lb__next { top: auto; bottom: 14px; translate: none; }
   .lb__cap { bottom: 80px; padding: 0 16px; }
+}
+
+/* Dotyková zařízení: bez rozmazaného pozadí a filtrů, které při scrollu brzdí */
+@media (hover: none), (pointer: coarse) {
+  .header.is-solid { background: rgba(17,17,17,.97); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .mbar { background: rgba(24,24,24,.98); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .hs-arrow { background: rgba(17,17,17,.85); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .map iframe { filter: none; }
+  .floaty { animation: none; }
+  .blob { will-change: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

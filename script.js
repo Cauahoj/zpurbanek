@@ -233,9 +233,10 @@
   const prevB = $('#hsPrev'), nextB = $('#hsNext');
   const DRIFT = .45; // jakou část galerie ujede sama během průjezdu sekce oknem
   let drift = false, distance = 0, hManual = 0, hCur = 0, hTarget = 0, hRaf = 0;
+  let hRect = () => hs.getBoundingClientRect(); // po prvním měření se nahradí výpočtem z uložených rozměrů
   // posun daný polohou sekce v okně (0 = sekce vjíždí zdola, 1 = odjíždí nahoře)
   const hAuto = () => {
-    const r = hs.getBoundingClientRect();
+    const r = hRect();
     return clamp((innerHeight - r.top) / (innerHeight + r.height)) * distance * DRIFT;
   };
   const hUI = (off, max) => {
@@ -287,46 +288,70 @@
   /* ── Jeden scroll handler ── */
   const progress = $('#progress'), header = $('#header'), mbar = $('#mbar'), steps = $('#steps'), stepEls = $$('.step');
   const hero = $('#hero');
-  const parallax = $$('[data-parallax]'), heroImg = $('[data-parallax-img]');
+  const parallax = fine ? $$('[data-parallax]') : [], heroImg = fine ? $('[data-parallax-img]') : null;
   let lastY = scrollY, ticking = false;
 
+  // Rozměry se měří jen při načtení a změně velikosti okna. Při scrollu se už nic neměří,
+  // jen se počítá ze scrollY – žádné vynucené přepočítávání layoutu (to dělalo mikrozáseky na mobilu).
+  const absTop = el => el.getBoundingClientRect().top + scrollY;
+  let M = {};
+  const measure = () => {
+    M = {
+      vh: innerHeight,
+      maxY: Math.max(1, document.documentElement.scrollHeight - innerHeight),
+      heroH: hero.offsetHeight,
+      wordsTop: words ? absTop(words) : 0, wordsH: words ? words.offsetHeight : 0,
+      stepsTop: steps ? absTop(steps) : 0, stepsH: steps ? steps.offsetHeight : 0,
+      stepTops: stepEls.map(absTop),
+      hsTop: absTop(hs), hsH: hs.offsetHeight
+    };
+  };
+  hRect = () => ({ top: M.hsTop - scrollY, height: M.hsH });
+  let lastN = -1, lastActive = -2, solid = null, mshow = null;
+
   function onScroll() {
-    const y = scrollY, vh = innerHeight;
-    progress.style.transform = `scaleX(${y / Math.max(1, document.documentElement.scrollHeight - vh)})`;
-    header.classList.toggle('is-solid', y > 20);
+    const y = scrollY, vh = M.vh;
+    progress.style.transform = `scaleX(${y / M.maxY})`;
+    if (solid !== (y > 20)) header.classList.toggle('is-solid', (solid = y > 20));
     if (!document.body.classList.contains('menu-open')) {
       if (y > lastY && y > 300) header.classList.add('is-hidden');
       else if (y < lastY - 4) header.classList.remove('is-hidden');
     }
     lastY = y;
-    mbar.classList.toggle('show', y > hero.offsetHeight * .7);
+    if (mshow !== (y > M.heroH * .7)) mbar.classList.toggle('show', (mshow = y > M.heroH * .7));
 
     if (reduce) {
       stepEls.forEach(s => s.classList.add('is-done'));
       return;
     }
 
-    // parallax skvrn a fotky v heru
-    if (y < hero.offsetHeight + 200) {
+    // parallax skvrn a fotky v heru (jen myš – na dotyku zbytečně zatěžuje)
+    if (y < M.heroH + 200) {
       parallax.forEach(el => (el.style.transform = `translate3d(0, ${y * +el.dataset.parallax * -1}px, 0)`));
       if (heroImg) heroImg.style.transform = `scale(1.08) translate3d(0, ${y * +heroImg.dataset.parallaxImg}px, 0)`;
     }
 
-    // rozsvěcení slov
+    // rozsvěcení slov – třídy se mění jen když se posune hranice
     if (wordEls.length) {
-      const r = words.getBoundingClientRect();
-      const p = clamp((vh * .85 - r.top) / (r.height + vh * .35));
-      const n = Math.round(p * wordEls.length);
-      wordEls.forEach((w, i) => w.classList.toggle('lit', i < n));
+      const top = M.wordsTop - y;
+      const n = Math.round(clamp((vh * .85 - top) / (M.wordsH + vh * .35)) * wordEls.length);
+      if (n !== lastN) {
+        const from = Math.min(n, Math.max(lastN, 0)), to = Math.max(n, lastN);
+        for (let i = from; i < to && i < wordEls.length; i++) wordEls[i].classList.toggle('lit', i < n);
+        if (lastN < 0) wordEls.forEach((w, i) => w.classList.toggle('lit', i < n));
+        lastN = n;
+      }
     }
 
     // postup: linka + aktivní krok
     if (steps) {
-      const r = steps.getBoundingClientRect();
-      steps.style.setProperty('--p', clamp((vh * .55 - r.top) / r.height));
+      steps.style.setProperty('--p', clamp((vh * .55 - (M.stepsTop - y)) / M.stepsH));
       let active = -1;
-      stepEls.forEach((s, i) => { if (s.getBoundingClientRect().top < vh * .6) active = i; });
-      stepEls.forEach((s, i) => { s.classList.toggle('is-active', i === active); s.classList.toggle('is-done', i < active); });
+      M.stepTops.forEach((t, i) => { if (t - y < vh * .6) active = i; });
+      if (active !== lastActive) {
+        stepEls.forEach((s, i) => { s.classList.toggle('is-active', i === active); s.classList.toggle('is-done', i < active); });
+        lastActive = active;
+      }
     }
 
     // galerie realizací
@@ -338,9 +363,26 @@
     requestAnimationFrame(() => { onScroll(); ticking = false; });
   }, { passive: true });
 
-  let rT;
-  addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { layoutH(); onScroll(); }, 120); });
-  addEventListener('load', () => { layoutH(); onScroll(); });
+  // Na mobilu se „resize“ spouští i schováním lišty prohlížeče – přeměřujeme jen při změně šířky
+  // nebo větší změně výšky, ať to neruší plynulý scroll.
+  let rT, lastW = innerWidth, lastH = innerHeight;
+  addEventListener('resize', () => {
+    clearTimeout(rT);
+    rT = setTimeout(() => {
+      const wChanged = innerWidth !== lastW, bigH = Math.abs(innerHeight - lastH) > 160;
+      lastW = innerWidth; lastH = innerHeight;
+      if (!wChanged && !bigH && !fine) { M.vh = innerHeight; M.maxY = Math.max(1, document.documentElement.scrollHeight - innerHeight); return; }
+      layoutH(); measure(); onScroll();
+    }, 150);
+  });
+  addEventListener('load', () => { layoutH(); measure(); onScroll(); });
+  // fonty, FAQ nebo výběr kontejneru mění výšku stránky – pak přeměřit (scroll výšku body nemění)
+  let roT = 0;
+  if ('ResizeObserver' in window) new ResizeObserver(() => {
+    cancelAnimationFrame(roT);
+    roT = requestAnimationFrame(() => { measure(); onScroll(); });
+  }).observe(document.body);
   layoutH();
+  measure();
   onScroll();
 })();
