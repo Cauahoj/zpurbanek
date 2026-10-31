@@ -228,22 +228,61 @@
     if (e.key === 'ArrowLeft') show(cur - 1);
   });
 
-  /* ── Horizontální galerie (přišpendlená na desktopu) ── */
-  const hs = $('#realizace'), track = $('#track'), hbar = $('#hbar');
-  let distance = 0, pinned = false;
-  const layoutH = () => {
-    pinned = innerWidth >= 761 && !reduce;
-    hs.classList.toggle('is-pinned', pinned);
-    track.style.transform = '';
-    if (!pinned) { hs.style.removeProperty('--h'); return; }
-    distance = Math.max(0, track.scrollWidth - innerWidth);
-    hs.style.setProperty('--h', innerHeight + distance + 'px');
+  /* ── Galerie realizací: při scrollu stránky jemně ujíždí do strany, šipkami se dá projít celá ── */
+  const hs = $('#realizace'), track = $('#track'), hbar = $('#hbar'), view = track.parentElement;
+  const prevB = $('#hsPrev'), nextB = $('#hsNext');
+  const DRIFT = .45; // jakou část galerie ujede sama během průjezdu sekce oknem
+  let drift = false, distance = 0, hManual = 0, hCur = 0, hTarget = 0, hRaf = 0;
+  // posun daný polohou sekce v okně (0 = sekce vjíždí zdola, 1 = odjíždí nahoře)
+  const hAuto = () => {
+    const r = hs.getBoundingClientRect();
+    return clamp((innerHeight - r.top) / (innerHeight + r.height)) * distance * DRIFT;
   };
-  track.addEventListener('scroll', () => {
-    if (pinned) return;
-    const max = track.scrollWidth - track.clientWidth;
-    hbar.style.transform = `scaleX(${max > 0 ? track.scrollLeft / max : 0})`;
-  }, { passive: true });
+  const hUI = (off, max) => {
+    hbar.style.transform = `scaleX(${max > 0 ? off / max : 0})`;
+    prevB.disabled = off <= 2;
+    nextB.disabled = off >= max - 2;
+  };
+  // plynulé dojíždění k cíli (lerp), ať pohyb působí měkce i při trhaném kolečku
+  const hAnimate = () => {
+    hCur += (hTarget - hCur) * .1;
+    if (Math.abs(hTarget - hCur) < .4) hCur = hTarget;
+    track.style.transform = `translate3d(${-hCur}px, 0, 0)`;
+    hUI(hCur, distance);
+    hRaf = hCur !== hTarget ? requestAnimationFrame(hAnimate) : 0;
+  };
+  const hSet = () => {
+    hTarget = clamp(hAuto() + hManual, 0, distance);
+    if (!hRaf) hRaf = requestAnimationFrame(hAnimate);
+  };
+  const layoutH = () => {
+    drift = innerWidth >= 761 && !reduce;
+    hs.classList.toggle('is-drift', drift);
+    track.style.transform = '';
+    if (!drift) return hUI(track.scrollLeft, track.scrollWidth - track.clientWidth);
+    track.scrollLeft = 0;
+    distance = Math.max(0, track.scrollWidth - view.clientWidth);
+    hCur = hTarget = clamp(hAuto() + hManual, 0, distance);
+    track.style.transform = `translate3d(${-hCur}px, 0, 0)`;
+    hUI(hCur, distance);
+  };
+  const hStep = () => Math.min(view.clientWidth * .8, ($('.work', track).offsetWidth + 18) * 2);
+  const hMove = dir => {
+    if (!drift) return track.scrollBy({ left: dir * hStep(), behavior: reduce ? 'auto' : 'smooth' });
+    hManual = clamp(hTarget + dir * hStep(), 0, distance) - hAuto();
+    hSet();
+  };
+  prevB.addEventListener('click', () => hMove(-1));
+  nextB.addEventListener('click', () => hMove(1));
+  track.addEventListener('scroll', () => { if (!drift) hUI(track.scrollLeft, track.scrollWidth - track.clientWidth); }, { passive: true });
+  // vodorovné gesto na touchpadu (nebo Shift + kolečko) posouvá jen galerii
+  view.addEventListener('wheel', e => {
+    const dx = e.deltaX || (e.shiftKey ? e.deltaY : 0);
+    if (!drift || !dx || Math.abs(dx) < Math.abs(e.shiftKey ? 0 : e.deltaY)) return;
+    e.preventDefault();
+    hManual = clamp(hTarget + dx, 0, distance) - hAuto();
+    hSet();
+  }, { passive: false });
 
   /* ── Jeden scroll handler ── */
   const progress = $('#progress'), header = $('#header'), mbar = $('#mbar'), steps = $('#steps'), stepEls = $$('.step');
@@ -290,13 +329,8 @@
       stepEls.forEach((s, i) => { s.classList.toggle('is-active', i === active); s.classList.toggle('is-done', i < active); });
     }
 
-    // horizontální galerie
-    if (pinned) {
-      const r = hs.getBoundingClientRect();
-      const p = clamp(-r.top / Math.max(1, r.height - vh));
-      track.style.transform = `translate3d(${-p * distance}px, 0, 0)`;
-      hbar.style.transform = `scaleX(${p})`;
-    }
+    // galerie realizací
+    if (drift) hSet();
   }
   addEventListener('scroll', () => {
     if (ticking) return;

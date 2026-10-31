@@ -306,12 +306,22 @@ h3 { font-size: 22px; line-height: 1.2; }
 }
 .work figcaption span { display: block; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; font-weight: 700; }
 @media (hover: hover) and (pointer: fine) { .work:hover img { transform: scale(1.06); } }
-.hscroll.is-pinned { height: var(--h); }
-.hscroll.is-pinned .hscroll__sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
-.hscroll.is-pinned .hscroll__sticky > .wrap { width: 100%; }
-.hscroll:not(.is-pinned) .hscroll__track { overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 12px; scrollbar-width: none; }
-.hscroll:not(.is-pinned) .hscroll__track::-webkit-scrollbar { display: none; }
-.hscroll:not(.is-pinned) .work { scroll-snap-align: center; }
+.hscroll { overflow-x: clip; }
+.hscroll__view { position: relative; }
+.hscroll:not(.is-drift) .hscroll__track { overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 12px; scrollbar-width: none; }
+.hscroll:not(.is-drift) .hscroll__track::-webkit-scrollbar { display: none; }
+.hscroll:not(.is-drift) .work { scroll-snap-align: center; }
+.hs-arrow {
+  position: absolute; top: 50%; z-index: 3; width: 58px; height: 58px; border-radius: 50%; translate: 0 -50%;
+  display: grid; place-items: center; color: #fff; background: rgba(17,17,17,.72);
+  border: 1px solid rgba(255,255,255,.16); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px rgba(0,0,0,.4); transition: background .25s, color .25s, opacity .3s, transform .3s var(--ease);
+}
+.hs-arrow svg { width: 24px; height: 24px; }
+.hs-arrow--prev { left: 20px; }
+.hs-arrow--next { right: 20px; }
+.hs-arrow:hover { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); transform: scale(1.08); }
+.hs-arrow:disabled { opacity: 0; pointer-events: none; }
 .hscroll__bar { height: 3px; background: var(--line); border-radius: 3px; margin-top: 28px; overflow: hidden; }
 .hscroll__bar span { display: block; height: 100%; background: var(--accent); transform-origin: 0 50%; transform: scaleX(0); }
 .hint { font-size: 14px; color: var(--muted); display: inline-flex; gap: 8px; align-items: center; }
@@ -478,6 +488,9 @@ a.ci:hover { border-color: var(--accent); transform: translateX(4px); }
   .hero__cta .btn { flex: 1 1 100%; }
   .mbar { display: flex; }
   .work, .work--wide { width: 78vw; }
+  .hs-arrow { width: 44px; height: 44px; }
+  .hs-arrow svg { width: 20px; height: 20px; }
+  .hs-arrow--prev { left: 10px; } .hs-arrow--next { right: 10px; }
   .work--wide { aspect-ratio: 3 / 4; }
   .sizes { flex-wrap: nowrap; }
   .size { flex: 1; min-width: 0; padding: 14px 8px; }
