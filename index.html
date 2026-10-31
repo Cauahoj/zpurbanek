@@ -288,15 +288,13 @@
 
     <div class="cont__visual" data-reveal="scale" aria-hidden="true">
       <div class="cont__label"><span id="contLabel">5</span><small> m³</small></div>
-      <svg class="cont__svg" id="contSvg" viewBox="0 0 400 230">
-        <ellipse cx="200" cy="216" rx="170" ry="9" fill="rgba(31,27,22,.12)"/>
-        <path d="M36 62 H364 L334 196 H66 Z" fill="#F2B705" stroke="#1F1B16" stroke-width="5" stroke-linejoin="round"/>
-        <path d="M120 62 L112 196 M200 62 V196 M280 62 L288 196" stroke="#1F1B16" stroke-width="4" opacity=".55"/>
-        <rect x="24" y="48" width="352" height="18" rx="5" fill="#1F1B16"/>
-        <rect x="76" y="196" width="248" height="12" rx="3" fill="#1F1B16"/>
-        <circle cx="44" cy="96" r="9" fill="none" stroke="#1F1B16" stroke-width="5"/>
-        <circle cx="356" cy="96" r="9" fill="none" stroke="#1F1B16" stroke-width="5"/>
-        <text x="200" y="146" text-anchor="middle" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="34" fill="#1F1B16" letter-spacing="-1">URBÁNEK</text>
+      <!-- Kontejnery (abroll) kreslí script.js – každá velikost ve skutečném poměru -->
+      <svg class="cont__svg" id="contSvg" viewBox="0 0 420 290">
+        <defs>
+          <pattern id="rw" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="6" height="12" fill="#D62828"/><rect x="6" width="6" height="12" fill="#fff"/>
+          </pattern>
+        </defs>
       </svg>
     </div>
   </div>

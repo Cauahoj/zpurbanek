@@ -102,17 +102,57 @@
   }
 
   /* ── Výběr kontejneru ── */
+  // L = délka, H = výška v px (viewBox 420×290); 3 m³ je nízká suťová vana se šikmými čely
   const sizes = {
-    3: { s: .62, t: 'Menší úklid, vyklízení garáže nebo sklepa, odpad z rekonstrukce koupelny.' },
-    5: { s: .76, t: 'Rekonstrukce bytu nebo koupelny, vyklízení sklepa či půdy, menší bourací práce.' },
-    7: { s: .88, t: 'Větší rekonstrukce domu, suť z bourání příček, zemina z menších výkopů.' },
-    10: { s: 1, t: 'Stavba nebo demolice, objemný stavební odpad, rozsáhlé vyklízení.' }
+    3: { L: 250, H: 46, trough: true, t: 'Menší úklid, vyklízení garáže nebo sklepa, odpad z rekonstrukce koupelny.' },
+    5: { L: 290, H: 84, t: 'Rekonstrukce bytu nebo koupelny, vyklízení sklepa či půdy, menší bourací práce.' },
+    7: { L: 320, H: 114, t: 'Větší rekonstrukce domu, suť z bourání příček, zemina z menších výkopů.' },
+    10: { L: 350, H: 150, t: 'Stavba nebo demolice, objemný stavební odpad, rozsáhlé vyklízení.' }
+  };
+  const ink = '#111', yel = '#F5C100', yel2 = '#D9A600';
+  const drawCont = (v, { L, H, trough }) => {
+    const G = 272, cx = 210, x0 = cx - L / 2, x1 = cx + L / 2, bot = G - 16, top = bot - H;
+    const ins = trough ? 22 : 0, f = (H - 9) / H;
+    let s = `<ellipse cx="${cx}" cy="${G + 3}" rx="${L / 2 + 12}" ry="7" fill="rgba(0,0,0,.35)"/>`;
+    // podvozek (ližiny + kladky)
+    s += `<rect x="${x0 + 14}" y="${bot}" width="${L - 28}" height="9" rx="2" fill="${ink}"/>`;
+    s += `<circle cx="${x0 + 22}" cy="${G - 6}" r="6" fill="${ink}"/><circle cx="${x1 - 22}" cy="${G - 6}" r="6" fill="${ink}"/>`;
+    // tělo + spodní pás
+    s += `<path d="M${x0} ${top}H${x1}L${x1 - ins} ${bot}H${x0 + ins}Z" fill="${yel}"/>`;
+    s += `<path d="M${x0 + ins * f} ${bot - 9}H${x1 - ins * f}L${x1 - ins} ${bot}H${x0 + ins}Z" fill="${yel2}"/>`;
+    // svislá žebra
+    const n = Math.round(L / (trough ? 60 : 40));
+    for (let i = 1; i < n; i++) {
+      const x = x0 + (L * i) / n;
+      s += `<path d="M${x} ${top + 6}V${bot - 9}" stroke="rgba(0,0,0,.26)" stroke-width="3"/>`;
+    }
+    s += `<path d="M${x0} ${top}H${x1}L${x1 - ins} ${bot}H${x0 + ins}Z" fill="none" stroke="${ink}" stroke-width="3.5" stroke-linejoin="round"/>`;
+    // horní lem
+    s += `<rect x="${x0 - 3}" y="${top - 6}" width="${L + 6}" height="8" rx="2" fill="${ink}"/>`;
+    // výstražné červenobílé pruhy v rozích
+    const sh = Math.min(H * .62, 58), sw = 14, sy = bot - 9 - sh;
+    s += `<rect x="${x0 + ins + 5}" y="${sy}" width="${sw}" height="${sh}" fill="url(#rw)" stroke="${ink}" stroke-width="1.5"/>`;
+    s += `<rect x="${x1 - ins - 5 - sw}" y="${sy}" width="${sw}" height="${sh}" fill="url(#rw)" stroke="${ink}" stroke-width="1.5"/>`;
+    // „A“ rám pro hák
+    const apex = top + H * (trough ? .2 : .3), hw = Math.min(28, H * .3 + 8);
+    s += `<path d="M${cx - hw} ${bot - 9}L${cx} ${apex}L${cx + hw} ${bot - 9}" fill="none" stroke="${ink}" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    s += `<circle cx="${cx}" cy="${apex}" r="4.5" fill="${ink}"/>`;
+    // nápis a štítek s objemem
+    if (!trough) {
+      const fs = Math.min(24, H * .21);
+      s += `<text x="${x0 + L * .27}" y="${top + H * .44}" text-anchor="middle" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="${fs}" fill="${ink}" stroke="${yel}" stroke-width="6" paint-order="stroke" letter-spacing="-.5">URBÁNEK</text>`;
+      s += `<rect x="${x1 - L * .27 - 24}" y="${top + H * .3 - 11}" width="48" height="20" rx="3" fill="#fff" stroke="${ink}" stroke-width="1.5"/>`;
+      s += `<text x="${x1 - L * .27}" y="${top + H * .3 + 4}" text-anchor="middle" font-family="DM Sans, sans-serif" font-weight="700" font-size="12" fill="${ink}">${v} m³</text>`;
+    }
+    return `<g class="cg" data-size="${v}">${s}</g>`;
   };
   const svg = $('#contSvg'), fade = $('#contFade');
+  if (svg) svg.insertAdjacentHTML('beforeend', Object.entries(sizes).map(([v, d]) => drawCont(v, d)).join(''));
+  const showCont = v => $$('.cg', svg).forEach(g => g.classList.toggle('on', g.dataset.size === String(v)));
   const pick = btn => {
     const v = btn.dataset.size, d = sizes[v];
     $$('.size').forEach(b => b.setAttribute('aria-selected', b === btn));
-    svg.style.setProperty('--s', d.s);
+    showCont(v);
     $('#contLabel').textContent = v;
     fade.classList.add('swap');
     setTimeout(() => {
@@ -125,7 +165,7 @@
     }, reduce ? 0 : 200);
   };
   $$('.size').forEach(b => b.addEventListener('click', () => pick(b)));
-  if (svg) svg.style.setProperty('--s', sizes[5].s);
+  if (svg) showCont(5);
 
   /* ── Předvyplnění formuláře podle tlačítka ── */
   const form = $('#poptavka'), sel = $('#qf-service'), src = $('#qf-src');

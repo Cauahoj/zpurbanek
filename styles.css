@@ -255,7 +255,9 @@ h3 { font-size: 22px; line-height: 1.2; }
 .cont__fade.swap { opacity: 0; transform: translateY(6px); }
 .cont__visual { position: relative; aspect-ratio: 5 / 4; display: grid; place-items: end center; padding-bottom: 8%; }
 .cont__visual::before { content: ""; position: absolute; inset: 8% 4% 0; background: var(--surface-2); border-radius: 28px; }
-.cont__svg { position: relative; width: 88%; transform-origin: 50% 100%; transform: scale(var(--s, .8)); transition: transform .7s var(--ease); }
+.cont__svg { position: relative; width: 94%; overflow: visible; }
+.cg { opacity: 0; transform: translateY(18px); transition: opacity .4s var(--ease), transform .6s var(--ease); }
+.cg.on { opacity: 1; transform: none; }
 .cont__label { position: absolute; top: 14%; right: 9%; font-family: var(--head); font-weight: 800; font-size: clamp(40px, 5vw, 64px); letter-spacing: -0.03em; line-height: 1; }
 .cont__label small { font-size: .45em; }
 .note { font-size: 14px; color: var(--muted); margin-top: 14px; }
