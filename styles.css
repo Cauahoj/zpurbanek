@@ -385,6 +385,7 @@ h3 { font-size: 22px; line-height: 1.2; }
 .cta-big { text-align: center; margin-bottom: clamp(56px, 8vw, 88px); }
 .cta-big h2 { font-size: clamp(42px, 7vw, 88px); line-height: 1; letter-spacing: -0.035em; margin-bottom: 22px; }
 .cta-big .lead { margin: 0 auto 34px; }
+.cta-big__btns { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 14px; }
 .magnet { display: inline-block; transition: transform .4s var(--ease); }
 .btn--xl { padding: 24px 38px; font-size: clamp(19px, 2.2vw, 24px); font-family: var(--head); }
 .btn--xl svg { width: 22px; height: 22px; }

@@ -185,10 +185,11 @@
   if (svg) showCont(5);
 
   /* ── Předvyplnění formuláře podle tlačítka ── */
-  const form = $('#poptavka'), sel = $('#qf-service'), src = $('#qf-src');
+  const form = $('#poptavka'), sel = $('#qf-service'), src = $('#qf-src'), mail = $('#ctaMail');
   $$('[data-service], [data-src]').forEach(a => a.addEventListener('click', () => {
     if (a.dataset.service) {
       sel.value = a.dataset.service;
+      mail.href = `mailto:zpurbanek@seznam.cz?subject=${encodeURIComponent('Poptávka: ' + a.dataset.service)}`;
       form.classList.remove('flash'); void form.offsetWidth; form.classList.add('flash');
     }
     if (a.dataset.src) src.value = a.dataset.src;
