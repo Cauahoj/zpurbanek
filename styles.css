@@ -440,6 +440,9 @@ a.ci:hover { border-color: var(--accent); transform: translateX(4px); }
 .mbar.show { transform: none; }
 .mbar a { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 16px; font-weight: 700; text-decoration: none; font-size: 16px; }
 .mbar svg { width: 19px; height: 19px; }
+.toast { position: fixed; left: 50%; bottom: 24px; z-index: 200; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; width: max-content; max-width: calc(100% - 32px); padding: 14px 20px; border-radius: 14px; background: #fff; color: var(--accent-ink); font-size: 15px; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,.4); transition: opacity .3s, transform .3s var(--ease); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 900px) { .toast { bottom: 96px; } }
 .mbar__call { background: var(--accent); color: var(--accent-ink); }
 .mbar__wa { background: #25D366; color: #0B2E17; }
 

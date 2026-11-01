@@ -209,6 +209,22 @@
     q.setAttribute('aria-expanded', open);
   }));
 
+  /* ── E-mail: když se po kliknutí neotevře pošta (chybí výchozí aplikace, prohlížeč v Instagramu…),
+     adresa se aspoň zkopíruje a ukáže se hláška ── */
+  const toast = document.createElement('div');
+  toast.className = 'toast'; toast.setAttribute('role', 'status');
+  document.body.append(toast);
+  let toastT;
+  $$('a[href^="mailto:"]').forEach(a => a.addEventListener('click', () => {
+    const addr = a.href.slice(7).split('?')[0];
+    const done = ok => {
+      toast.innerHTML = ok ? `Adresa <b>${addr}</b> je zkopírovaná. Stačí ji vložit do e-mailu.` : `Napište nám na <b>${addr}</b>`;
+      toast.classList.add('show');
+      clearTimeout(toastT); toastT = setTimeout(() => toast.classList.remove('show'), 6000);
+    };
+    navigator.clipboard ? navigator.clipboard.writeText(addr).then(() => done(true), () => done(false)) : done(false);
+  }));
+
   /* ── Magnetické tlačítko ── */
   const mag = $('#magnet');
   if (mag && fine && !reduce) {
